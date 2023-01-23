@@ -8,15 +8,17 @@ public class Customer extends User {
 
 	private String email;
 	private String realName;
+	private ArrayList<Ticket> ticketsOfUser;
 	
 	public Customer(String username, String password, String email, String realName) {
 		super(username, password);
 		
 		setEmail(email);
 		setRealName(realName);
+		ticketsOfUser = new ArrayList<Ticket>();
 	}
 	
-	public void setEmail(String email) {
+	private void setEmail(String email) {
 		if (email == null || email.length() == 0)
 			throw new IllegalArgumentException("The email cannot be null or empty");
 		
@@ -25,51 +27,18 @@ public class Customer extends User {
 		
 		this.email = email;
 	}
-	
-	public void setRealName(String realName) {
+
+	private void setRealName(String realName) {
 		if (realName == null || realName.length() == 0)
 			throw new IllegalArgumentException("The real name cannot be null or empty");
 		
 		for (int i = 0; i < realName.length(); i++)
 			if (!(Character.isLetter(realName.charAt(i)) || Character.isWhitespace(realName.charAt(i))))
 				throw new IllegalArgumentException("The real name must contain only letters");
+		
+		this.realName = realName;
 	}
-	
-	public void buyTicket(Scanner in) {
-		Performance selectedPerformance = Performance.selectPerformance(in);
-		
-		selectedPerformance.printSeats();
-		
-		Seat[][] performanceSeats = selectedPerformance.getSeats();
-		
-		boolean completed = false;
-		
-		do {
-			try {
-				System.out.println("Select a row: ");
-				int selectedRow = Integer.parseInt(in.nextLine());
-				
-				System.out.println("Select a seat: ");
-				int selectedSeat = Integer.parseInt(in.nextLine());
-				
-				// TODO: make the ticket be OnlineTicket
-				Ticket ticket = new OnlineTicket(selectedPerformance, performanceSeats[selectedRow][selectedSeat].getSeatPrice(),
-						performanceSeats[selectedRow][selectedSeat], email, getUsername(), realName);
-				performanceSeats[selectedRow][selectedSeat].setTicket(ticket);
-				System.out.println(ticket.printTicket());
-				completed = true;
-			} catch (IllegalArgumentException ex) {
-				System.out.println(ex.getMessage() + " Try again!");
-			} catch (ArrayIndexOutOfBoundsException ex) {
-				System.out.println("The seat was not among the available for selection! Try again!");
-			}
-		} while (!completed);
-	}
-	
-	public void showTickets() {
-		System.out.println(OnlineTicket.getTicketsByBuyerUsername(getUsername()));
-	}
-	
+
 	public static User registerUser(Scanner in) {
 		System.out.println("Let's start with the registration of a customer");
 		System.out.println("A customer will be able to:");
@@ -98,7 +67,7 @@ public class Customer extends User {
 				User customer = new Customer(username, password, email, realName);
 				return customer;
 			} catch (IllegalArgumentException ex) {
-				System.out.println(ex.getMessage() + "Try again!");
+				System.out.println(ex.getMessage() + " Try again!");
 			}
 		} while (true);
 	}
@@ -106,17 +75,16 @@ public class Customer extends User {
 	@Override
 	public void welcomeUser(Scanner in) {
 		final int MIN_OPTION = 1;
-		final int MAX_OPTION = 5;
+		final int MAX_OPTION = 4;
 		
 		System.out.println("A customer with the username " + this.getUsername() + " has logged in");
 		
 		do {
 			System.out.println("Choose an option from the following menu:");
 			System.out.println("\t1. Buy ticket");
-			System.out.println("\t2. Modify ticket");
-			System.out.println("\t3. Cancel ticket");
-			System.out.println("\t4. See all purchased tickets");
-			System.out.println("\t5. Logout");
+			System.out.println("\t2. Cancel ticket");
+			System.out.println("\t3. See all purchased tickets");
+			System.out.println("\t4. Logout");
 			
 			int option = 0;
 			
@@ -139,18 +107,83 @@ public class Customer extends User {
 					buyTicket(in);
 					break;
 				case 2:
-					// TODO: modify ticket
+					cancelTicket(in);
 					break;
 				case 3:
-					// TODO: cancel ticket
+					showTickets();
 					break;
 				case 4:
-					showTickets();
-					return;
-				case 5:
 					return;
 			}
 		} while(true);
+	}
+
+	private void buyTicket(Scanner in) {
+		Performance selectedPerformance;
+		
+		try {
+			selectedPerformance = Performance.selectPerformance(in);
+		} catch (IllegalArgumentException ex) {
+			System.out.println(ex.getMessage());
+			return;
+		}
+		
+		System.out.println(selectedPerformance.printSeats());
+		
+		boolean completed = false;
+		
+		do {
+			try {
+				System.out.println("Select a row: ");
+				int selectedRow = Integer.parseInt(in.nextLine());
+				
+				System.out.println("Select a seat: ");
+				int selectedSeat = Integer.parseInt(in.nextLine());
+				
+				Ticket ticket = new OnlineTicket(selectedPerformance, selectedRow, selectedSeat, email, realName);
+				ticket.getSeat().setTicket(ticket);
+				ticketsOfUser.add(ticket);
+				System.out.println(ticket);
+				completed = true;
+			} catch (IllegalArgumentException ex) {
+				System.out.println(ex.getMessage() + " Try again!");
+			} catch (ArrayIndexOutOfBoundsException ex) {
+				System.out.println("The seat was not among the available for selection! Try again!");
+			}
+		} while (!completed);
+	}
+	
+	private void cancelTicket(Scanner in) {
+		System.out.println("Select a ticket you want to cancel by entering its number: ");
+		showTickets();
+		
+		try {
+			int ticketNumber = Integer.parseInt(in.nextLine());
+			for (Ticket ticket : ticketsOfUser)
+				if (ticket.getTicketNumber() == ticketNumber) {
+					ticket.cancelTicket();
+					System.out.println("Ticket canceled.");
+					return;
+				}
+			throw new IllegalArgumentException("Ticket was not found! Try again!");		
+		} catch (NumberFormatException ex) {
+			System.out.println("The input must be a number! Try again!");
+		} catch (IllegalArgumentException ex) {
+			System.out.println(ex.getMessage());
+		}
+	}
+	
+	private void showTickets() {
+		boolean areThereTickets = false;
+		
+		for (Ticket ticket : ticketsOfUser)
+			if (ticket.getValid() == true) {
+				areThereTickets = true;
+				System.out.println(ticket);
+			}
+		
+		if (!areThereTickets)
+			System.out.println("No tickets bought! Go and buy some!");
 	}
 	
 }

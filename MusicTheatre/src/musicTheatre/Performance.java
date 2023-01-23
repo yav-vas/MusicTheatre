@@ -2,10 +2,7 @@ package musicTheatre;
 
 import java.util.*;
 
-public class Performance implements Unique {
-	// TODO: add sorting of performances by date and time and title
-	
-	// TODO: fix the order of the methods
+public class Performance implements Unique, Comparable<Performance> {
 
 	private static ArrayList<Performance> performances = new ArrayList<Performance>();
 	
@@ -19,7 +16,7 @@ public class Performance implements Unique {
 	private Seat[][] seats;
 	
 	public Performance() {
-		throw new IllegalArgumentException("Cannot create empty performance");
+		
 	}
 	
 	public Performance(String title, String composer, String date, String startTime,
@@ -27,17 +24,46 @@ public class Performance implements Unique {
 		this.title = title;
 		this.composer = composer;
 		this.date = date;
-		this.startTime = startTime;
-		this.length = length;
+		setStartTime(startTime);
+		setLength(length);
 		this.hall = hall;
 		setPrices(prices);
 		setSeats(seatClasses);
-		
+		isUnique(this);
 		performances.add(this);
+		performances.sort(null);
+	}
+	
+	private void setStartTime(String startTime) {
+		validateTime(startTime);
+		this.startTime = startTime;
+	}
+	
+	private void setLength(String length) {
+		validateTime(length);
+		this.length = length;
+	}
+	
+	private void validateTime(String time) throws IllegalArgumentException {
+		if (time.length() != 5)
+			throw new IllegalArgumentException("The time input string should have exactly 5 characters");
+		
+		if (time.charAt(2) != ':')
+			throw new IllegalArgumentException("The middle character is not a semicolon");
+		
+		for (int i = 0; i < time.length(); i++) {
+			if (i == 2) continue;
+			if (!Character.isDigit(time.charAt(i)))
+				throw new IllegalArgumentException("Time was not set properly: Aside from the semicolon all other characters must be digits!");
+		}
 	}
 	
 	public String getTitle() {
 		return title;
+	}
+	
+	public String getComposer() {
+		return composer;
 	}
 	
 	public static Performance getPerformanceAtIndex(int index) {
@@ -56,11 +82,15 @@ public class Performance implements Unique {
 		return startTime;
 	}
 	
+	public String getLength() {
+		return length;
+	}
+	
 	public int getPrice(SeatClass seatClass) {
 		return prices[seatClass.ordinal()];
 	}
 	
-	public void setPrices(int[] prices) throws IllegalArgumentException {
+	private void setPrices(int[] prices) throws IllegalArgumentException {
 		this.prices = new int[prices.length];
 		for (int i = 0; i < prices.length; i++) {
 			if (prices[i] <= 0)
@@ -73,7 +103,7 @@ public class Performance implements Unique {
 		return seats;
 	}
 	
-	public void setSeats(SeatClass[] seatClasses) {
+	private void setSeats(SeatClass[] seatClasses) {
 		seats = new Seat[hall.getRows()][hall.getSeatsPerRow()];
 		for (int i = 0; i < hall.getRows(); i++)
 			for (int j = 0; j < hall.getSeatsPerRow(); j++)
@@ -86,30 +116,34 @@ public class Performance implements Unique {
 		performance = null; // the performance is null
 	}
 
-	public void printSeats() { // TODO: make it return a String, rather than directly print it
-		// TODO: write nicer print statements with formatting
-		System.out.println("Legend:");
-		System.out.println("\t0 - Seat is taken");
+	public String printSeats() {
+		StringBuilder result = new StringBuilder();
+		result.append("Legend: \n");
+		result.append("\t0 - Seat is taken\n");
 		
 		for (int i = 0; i < SeatClass.values().length; i++) {
-			System.out.println("\t" + (i + 1) + " - " + SeatClass.values()[i]);
+			result.append("\t" + (i + 1) + " - " + SeatClass.values()[i] + '\n');
 		}
-		System.out.print("  ");
+		result.append("   ");
 		for (int i = 0; i < hall.getSeatsPerRow(); i++) {
-			System.out.print(i);
+			result.append(String.format("%-3d", Seat.getActualSeatOnRow(i, hall)));
 		}
-		System.out.println();
+		result.append('\n');
 		
 		for (int i = 0; i < hall.getRows(); i++) {
-			System.out.print(i + " ");
+			result.append(String.format("%-3d", Seat.getActualRow(i, hall)));
 			for (int j = 0; j < hall.getSeatsPerRow(); j++) {
 				if (seats[i][j].isTaken())
-					System.out.print("0");
+					result.append(String.format("%-3d", 0));
 				else
-					System.out.print(seats[i][j].getSeatClass().toNumber());
+					result.append(String.format("%-3d", seats[i][j].getSeatClass().toNumber()));
 			}
-			System.out.println();
+			result.append('\n');
 		}
+		
+		result.append("----STAGE----\n");
+		
+		return result.toString();
 	}
 	
 	public static String printPerformances() {
@@ -143,33 +177,49 @@ public class Performance implements Unique {
 				selectedPerformance = Performance.getPerformanceAtIndex(choice);
 				return selectedPerformance;
 			} catch (NumberFormatException ex) {
-				System.out.println("The input must be a number! Try again!"); // TODO: decide if try again is on a new line or not
+				System.out.println("The input must be a number! Try again!");
 			} catch (IndexOutOfBoundsException ex) {
 				System.out.println("The entered number was not among the allowed for selection! Try again!");
 			}
 		} while(true);
 	}
 	
-	// unique if the title, the hall and the date are not the same
+	// unique if the hall and the date are not the same
 	public static boolean isUnique(Performance performanceToCheck) {
-		String title = performanceToCheck.getTitle();
-		Hall hall = performanceToCheck.getHall();
-		String date = performanceToCheck.getDate();
-		for (Performance performance : performances) {
-			if (performance.getDate().equals(date) && performance.getHall().equals(hall))
-				return false;
-		}
+		for (Performance performance : performances)
+			if (performance.equals(performanceToCheck))
+				throw new IllegalArgumentException("There is already an existing performance in the same hall"
+													+ " on the same date with the same title");
 		return true;
 	}
 	
+	// equals if title, date and hall match
 	@Override
-	public String toString() { // TODO: make the method return more advanced results
-		StringBuilder string = new StringBuilder();
+	public boolean equals(Object o) {
+		if (o.getClass() != this.getClass())
+			return false;
 		
-		string.append("Name: " + title + "\n");
-		string.append("Date: " + date + "\n");
+		Performance check = (Performance) o;
 		
-		return string.toString();
+		return check.getTitle().equals(title) && check.getDate().equals(date) && check.getHall().equals(hall);
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+		
+		result.append("Title: " + title + "\n");
+		result.append("Composer: " + composer + '\n');
+		result.append("Date: " + date + "\n");
+		result.append("Start time: " + startTime + '\n');
+		result.append("Lenght: " + length + '\n');
+		
+		return result.toString();
+	}
+
+	@Override
+	public int compareTo(Performance o) {
+		return this.title.compareTo(o.getTitle());
 	}
 	
 }

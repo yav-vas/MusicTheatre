@@ -4,7 +4,6 @@ import java.util.*;
 
 public abstract class Ticket {
 	
-	// TODO: add maximum for the tickets count
 	private static final int MAX_TICKETS = 100000;
 	
 	private static Random random = new Random();
@@ -14,7 +13,6 @@ public abstract class Ticket {
 	private static int ticketsCount = 0;
 	
 	private Performance performance;
-	private int price;
 	private int number;
 	private boolean checked;
 	private boolean valid;
@@ -25,15 +23,14 @@ public abstract class Ticket {
 		
 	}
 	
-	public Ticket(Performance performance, int price, Seat seat) throws IllegalArgumentException {
+	public Ticket(Performance performance, int row, int seatOnRow) throws IllegalArgumentException {
 		if (ticketsCount >= MAX_TICKETS) 
 			throw new IllegalArgumentException("Cannot create more tickets, the limit of " + MAX_TICKETS + " has been reached!");
 		this.performance = performance;
-		setPrice(price);
 		number = currentTicketNumber;
 		checked = false;
 		valid = true;
-		setSeat(seat);
+		setSeat(row, seatOnRow);
 		currentTicketNumber++;
 		ticketsCount++;
 		getTickets().add(this);
@@ -47,16 +44,6 @@ public abstract class Ticket {
 		return seat;
 	}
 	
-	public double getPrice() {
-		return price;
-	}
-
-	public void setPrice(int price) throws IllegalArgumentException{
-		if (price <= 0) throw new IllegalArgumentException("Price cannot be zero or negative");
-		
-		this.price = price;
-	}
-	
 	public boolean getValid() {
 		return valid;
 	}
@@ -65,7 +52,16 @@ public abstract class Ticket {
 		return this.number;
 	}
 	
-	public void setSeat(Seat seat) {
+	public String getChecker() {
+		return this.checker;
+	}
+	
+	private void setSeat(int row, int seatOnRow) {
+		int arrayRow = Seat.getArrayRow(row, performance.getHall());
+		int arraySeatOnRow = Seat.getArraySeatOnRow(seatOnRow, performance.getHall());
+		
+		Seat seat = performance.getSeats()[arrayRow][arraySeatOnRow];
+		
 		if (seat.isTaken())
 			throw new IllegalArgumentException("This seat is taken");
 		
@@ -76,31 +72,67 @@ public abstract class Ticket {
 		this.valid = valid;
 	}
 	
+	public int getPrice() {
+		return seat.getSeatPrice();
+	}
+	
 	public static ArrayList<Ticket> getTickets() {
 		return tickets;
 	}
-
-	public static void setTickets(ArrayList<Ticket> tickets) {
-		Ticket.tickets = tickets;
-	}
-
-	public abstract String printTicket();
 	
-	public void cancelTicket() {
+	public void cancelTicket() throws IllegalArgumentException {
+		if (checker != null)
+			throw new IllegalArgumentException("The ticket cannot be canceled! It has already been checked by " + checker);
+			
 		setValid(false);
 	}
 	
-	public static void cancelTicketsForPerformance(Performance performance) {
+	public static int cancelTicketsForPerformance(Performance performance) {
+		int canceledTicketsCount = 0;
 		for (Ticket ticket : getTickets())
-			if (ticket.performance == performance) // TODO: better use equals method
+			if (ticket.performance.equals(performance)) {
 				ticket.cancelTicket();
+				canceledTicketsCount++;
+			}
+		return canceledTicketsCount;
 	}
 	
-	public static boolean ticketNumberExists(int numberToCheck) {
+	public static Ticket ticketWithNumber(int numberToFind) throws IllegalArgumentException {
 		for (Ticket ticket : getTickets())
-			if (ticket.number == numberToCheck && ticket.valid == true)
-				return true;
+			if (ticket.number == numberToFind) {
+				if (ticket.valid == false)
+					throw new IllegalArgumentException("The ticket is no longer valid!");
+				if (ticket.checked == true)
+					throw new IllegalArgumentException("Ticket has already been checked!");
+				return ticket;
+			}
 		
-		return false;
+		throw new IllegalArgumentException("No ticket was found!");
+	}
+	
+	public String check(String checkerName) {
+		setValid(false);
+		this.checker = checkerName;
+		this.checked = true;
+		
+		StringBuilder result = new StringBuilder();
+		
+		result.append("The ticket with number: " + this.number + " has been checked and is valid.\n");
+		result.append("The seat is on the " + getSeat().getOddOrEven() + " side of the hall.");
+		
+		return result.toString();
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+		
+		if (valid == false) result.append("This ticket is INVALID!\n");
+		result.append("Ticket number: \n" + getTicketNumber() + '\n');
+		result.append("\tPerformance: \n" + getPerformance().toString() + '\n');
+		result.append("\tSeat: \n" + getSeat().toString() + '\n');
+		result.append("Price: " + getPrice() + " BGN\n");
+		
+		return result.toString();
 	}
 }

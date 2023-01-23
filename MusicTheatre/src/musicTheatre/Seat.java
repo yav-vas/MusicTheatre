@@ -8,7 +8,6 @@ public class Seat {
 	private int seatOnRow;
 	private SeatClass seatClass;
 	private Ticket ticket;
-	private int price;
 	
 	public Seat() {
 		
@@ -20,7 +19,17 @@ public class Seat {
 		this.seatClass = seatClass;
 		this.performance = performance;
 		this.hall = hall;
-		this.price = getSeatPrice();
+	}
+	
+	public int getRow() {
+		return row;
+	}
+	
+	public String getOddOrEven() {
+		if (getActualSeatOnRow() % 2 == 0)
+			return "even";
+		else
+			return "odd";
 	}
 	
 	public SeatClass getSeatClass() {
@@ -43,11 +52,7 @@ public class Seat {
 		return performance.getPrice(seatClass);
 	}
 	
-	// TODO: getActualRow and getActualSeatOnRow -> make them private
-	// TODO: make the tickets use these methods and also when printing the hall
-	// TODO: the array-based counts should only be used for internal storage; all displayed this should use the methods
-	
-	public int getActualRow() {
+	private int getActualRow() {
 		return Seat.getActualRow(row, hall);
 	}
 	
@@ -57,7 +62,7 @@ public class Seat {
 		return rows - row;
 	}
 	
-	public int getActualSeatOnRow() {
+	private int getActualSeatOnRow() {
 		return Seat.getActualSeatOnRow(seatOnRow, hall);
 	}
 	
@@ -66,12 +71,25 @@ public class Seat {
 		
 		int middle = seatsOnRow / 2;
 		
-		// odd
-		if (seatOnRow <= middle) {
+		if (seatOnRow <= middle) // odd
 			return 1 + seatOnRow * 2;
-		} else { // even
+		else // even
 			return (seatsOnRow - seatOnRow) * 2;
-		}
+	}
+	
+	public static int getArrayRow(int actualRow, Hall hall) {
+		int rows = hall.getSeatsPerRow();
+		
+		return rows - actualRow;
+	}
+	
+	public static int getArraySeatOnRow(int seatOnRow, Hall hall) {
+		int seatsOnRow = hall.getSeatsPerRow();
+		
+		if (seatOnRow % 2 == 0) // even
+			return seatsOnRow - (seatOnRow / 2);
+		else // odd
+			return (seatOnRow - 1) / 2;
 	}
 	
 	@Override

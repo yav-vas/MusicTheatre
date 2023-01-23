@@ -112,7 +112,6 @@ public abstract class User implements Unique {
 		System.out.println("\t3. Ticket inspector");
 		System.out.println("\t4. Customer");
 		
-		// TODO: the following code may be transfered to a method
 		int option = 0;
 		
 		boolean completed = false;
@@ -143,11 +142,11 @@ public abstract class User implements Unique {
 		}
 	}
 	
+	// an abstract method to present the User with its options
 	public abstract void welcomeUser(Scanner in);
 	
+	// static method to display an external window for password input
 	public static String inputPassword() {
-		String password = "";
-		
 		JPanel panel = new JPanel();
 		JLabel label = new JLabel("Enter a password:");
 		JPasswordField passwordField = new JPasswordField(10);
@@ -156,11 +155,12 @@ public abstract class User implements Unique {
 		JOptionPane.showMessageDialog(null, panel, "Password", JOptionPane.PLAIN_MESSAGE);
 		
 		char[] passwordArray = passwordField.getPassword();
-		password = new String(passwordArray);
+		String password = new String(passwordArray);
 		
 		return password;
 	}
 	
+	// basic user login, nothing specific to the User type
 	public static User loginUser(Scanner in) {
 		System.out.println("Welcome, please enter an username and a password to start.");
 		
@@ -184,15 +184,14 @@ public abstract class User implements Unique {
 		} while(true);
 	}
 	
-	// check if a user with a specified username exists
-	// returns true if exists and false if not
+	// check if a user with the same username already exists
 	public static boolean isUnique(User userToCheck) {
 		String username = userToCheck.getUsername();
 		for (User user : users)
 			if (user.getUsername().equals(username))
-				return true;
+				throw new IllegalArgumentException("A user with this username already exists!");
 		
-		return false;
+		return true;
 	}
 	
 }

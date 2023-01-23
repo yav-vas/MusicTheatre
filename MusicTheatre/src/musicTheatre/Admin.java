@@ -1,7 +1,6 @@
 package musicTheatre;
 
 import java.util.*;
-import javax.swing.*;
 
 public class Admin extends User {
 	
@@ -69,7 +68,7 @@ public class Admin extends User {
 			do {
 				try {
 					option = Integer.parseInt(in.nextLine());
-					if (option < MIN_OPTION || option > MAX_OPTION) 
+					if (option < MIN_OPTION || option > MAX_OPTION) // not a valid option selected
 						throw new IllegalArgumentException("The entered number must be between " + MIN_OPTION + " and " + MAX_OPTION);
 					completed = true;
 				} catch (NumberFormatException ex) {
@@ -99,8 +98,6 @@ public class Admin extends User {
 	private void createHall(Scanner in) {
 		System.out.println("This Hall creation wizard will help you create a new hall for performances:");
 		
-		// TODO: Save the data somehow so that it is not used in case of failed attempt to create a hall (exception thrown)
-		
 		System.out.println("Choose a name for the new hall (e.g. Main hall):");
 		String name = in.nextLine();
 		
@@ -109,8 +106,7 @@ public class Admin extends User {
 		int rows = 0;
 		do {
 			try {
-				rows = Integer.parseInt(in.nextLine()); // TODO: all input of numbers must be followed by in.next() in the catch block
-									 // TODO: implement for all number inputs
+				rows = Integer.parseInt(in.nextLine());
 				completed = true; // executed only if the operation is successful
 			} catch (NumberFormatException ex) {
 				System.out.println("The input must be a number!");
@@ -139,6 +135,7 @@ public class Admin extends User {
 		}
 	}
 	
+	// ask all the necessary questions to create a new hall
 	private void createPerformance(Scanner in) {
 		System.out.println("This Performance creation wizard will help you create a new performance:");
 		
@@ -154,7 +151,7 @@ public class Admin extends User {
 				chosenHall = Hall.halls.get(choice);
 				completed = true;
 			} catch (NumberFormatException ex) {
-				System.out.println("The input must be a number! Try again!"); // TODO: decide if try again is on a new line or not
+				System.out.println("The input must be a number! Try again!");
 			} catch (IndexOutOfBoundsException ex) {
 				System.out.println("The entered number was not among the allowed for selection! Try again!");
 			}
@@ -166,13 +163,13 @@ public class Admin extends User {
 		System.out.println("Enter the name of the composer of the piece: ");
 		String composer = in.nextLine();
 		
-		System.out.println("Enter the date of the performance: "); // TODO: support for real Date class, not just meaningless String
+		System.out.println("Enter the date of the performance: ");
 		String date = in.nextLine();
 		
-		System.out.println("Enter the start time of the performance in the format HH:MM : "); // TODO: check if the format is really entered
+		System.out.println("Enter the start time of the performance in the format HH:MM : ");
 		String startTime = in.nextLine();
 		
-		System.out.println("Enter the lenght of the performance in the format HH:MM "); // TODO: check if the format is really entered
+		System.out.println("Enter the lenght of the performance in the format HH:MM ");
 		String length = in.nextLine();
 		
 		System.out.println("Now it is time to choose the prices for the performance and to assign seat category to each seat.");
@@ -180,9 +177,7 @@ public class Admin extends User {
 				+ "Seat categories are assigned on a row by row base. This means that for row of a specific number all of the seats are of the same category.\n"
 				+ "For each row you will be required to enter a number indicating your choice.\n");
 		
-		// TODO: two performance types - morning and evening; per day only one performance per type per hall
-		
-		int[] prices = new int[SeatClass.values().length]; // TODO: performance constructor that uses this array, not stupid variables
+		int[] prices = new int[SeatClass.values().length]; // array for prices of tickets for all seat classes
 		
 		for (int i = 0; i < SeatClass.values().length; i++) {
 			completed = false;
@@ -210,7 +205,7 @@ public class Admin extends User {
 				} catch (NumberFormatException ex) {
 					System.out.println("Input must be a number! Try again!");
 				} catch (IndexOutOfBoundsException ex) {
-					System.out.println(ex.getMessage());
+					System.out.println("Input was not among the options for selection! Try again!");
 				}
 			} while(!completed);
 		}
@@ -219,9 +214,12 @@ public class Admin extends User {
 			Performance performance = new Performance(title, composer, date, startTime, length, chosenHall, prices, categories);
 			System.out.println("The performance was successfully created!");
 			System.out.println(performance);
+			System.out.println("With seats: ");
+			System.out.println(performance.printSeats());
 			System.out.println("If you find any errors, then cancel the performance immediately and try again!");
 		} catch (IllegalArgumentException ex) {
-			System.out.println(ex.getMessage() + "Try again!");
+			System.out.println("No performance was created due to the following reason: ");
+			System.out.println(ex.getMessage() + " Try again!");
 		}
 		
 	}
@@ -229,23 +227,28 @@ public class Admin extends User {
 	private void cancelPerformance(Scanner in) {
 		System.out.println("This Perfomance cancelation wizard will guide you through the procedure of performance cancelation.");
 		System.out.println("Before you continue it is important to understand the consequences of such an action.");
-		System.out.println("\t1. The action is irreversalbe!");
+		System.out.println("\t1. The action is irreversilbe!");
 		System.out.println("\t2. All the tickets for the performance will be marked as unvalid and"
 							+ " each customer will be required to change its performance!");
 		System.out.println("\t3. Email will be sent to all customers with online tickets!");
 		
+		// check if a user understands the consequences
 		System.out.println("Are you sure you want to continue? Y/N");
 		boolean completed = false;
 		do {
 			String answer = in.nextLine();
 			if (answer.equals("Y")) completed = true;
-			else if (answer.equals("N")) System.out.println("The operation was aborted by the user!");
+			else if (answer.equals("N")) {
+				System.out.println("The operation was aborted by the user!");
+				return;
+			}
 			else System.out.println("Invalid answer! Try again!");
 		} while(!completed);
 		
+		// cancel tickets for the performance and cancel the performance
 		try {
 			Performance performanceToCancel = Performance.selectPerformance(in);
-			Ticket.cancelTicketsForPerformance(performanceToCancel); // TODO: add print info about how many tickets are now invalid
+			System.out.println(Ticket.cancelTicketsForPerformance(performanceToCancel) + " ticket(s) have been marked as invalid");
 			Performance.cancelPerformance(performanceToCancel);
 		} catch (IllegalArgumentException ex) {
 			System.out.println(ex.getMessage());

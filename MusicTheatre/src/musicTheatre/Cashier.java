@@ -14,7 +14,7 @@ public class Cashier extends User {
 		System.out.println("\t1. Sell tickets");
 		System.out.println("\t2. Change tickets");
 		
-		do {			
+		do {
 			System.out.println("Now it is time to choose a username and a password:");
 			
 			System.out.println("Username (max 10 characters, only letters): ");
@@ -39,14 +39,14 @@ public class Cashier extends User {
 	@Override
 	public void welcomeUser(Scanner in) {
 		final int MIN_OPTION = 1;
-		final int MAX_OPTION = 2;
+		final int MAX_OPTION = 3;
 		
 		System.out.println("A cashier with the username " + this.getUsername() + " has logged in");
 		
 		do {
 			System.out.println("Choose an option from the following menu:");
 			System.out.println("\t1. Sell ticket");
-			System.out.println("\t2. Change ticket");
+			System.out.println("\t2. Cancel ticket");
 			System.out.println("\t3. Logout");
 			
 			int option = 0;
@@ -70,7 +70,7 @@ public class Cashier extends User {
 					sellTicket(in);
 					break;
 				case 2:
-					changeTicket(in);
+					cancelTicket(in);
 					break;
 				case 3:
 					return;
@@ -78,52 +78,74 @@ public class Cashier extends User {
 		} while(true);
 	}
 	
-	public void sellTicket(Scanner in) {
+	private void sellTicket(Scanner in) {
 		Performance selectedPerformance;
+		
 		try {
 			selectedPerformance = Performance.selectPerformance(in);
-		} catch (IllegalArgumentException ex){
+		} catch (IllegalArgumentException ex) {
 			System.out.println(ex.getMessage());
 			return;
 		}
 		
-		selectedPerformance.printSeats();
-		
-		System.out.println("If 0 is printed, then the seat is taken!");
-		
-		Seat[][] performanceSeats = selectedPerformance.getSeats();
-		
-		boolean completed = false;
+		System.out.println(selectedPerformance.printSeats());
 		
 		do {
 			try {
 				System.out.println("Select a row: ");
-				int selectedRow = Integer.parseInt(in.nextLine()); // TODO: add try-catch
+				int selectedRow = Integer.parseInt(in.nextLine());
 				
 				System.out.println("Select a seat: ");
-				int selectedSeat = Integer.parseInt(in.nextLine()); // TODO: add try-catch
+				int selectedSeat = Integer.parseInt(in.nextLine());
 				
-				Ticket ticket = new PaperTicket(selectedPerformance, performanceSeats[selectedRow][selectedSeat].getSeatPrice(),
-						performanceSeats[selectedRow][selectedSeat], this.getUsername()); // TODO: implement each cashier different username
-				performanceSeats[selectedRow][selectedSeat].setTicket(ticket);
-				System.out.println(ticket.printTicket());
-				completed = true;
+				Ticket ticket = new PaperTicket(selectedPerformance,
+						selectedRow, selectedSeat, this.getUsername());
+				ticket.getSeat().setTicket(ticket);
+				System.out.println(ticket);
+				return;
 			} catch (NumberFormatException ex) {
 				System.out.println("The input must be a number! Try again!");
 			} catch (IllegalArgumentException ex) {
 				System.out.println(ex.getMessage());
 			}
-		} while (!completed);
+		} while (true);
 	}
 	
-	// if change has to be given - don't give any; 
-	// if the new ticket costs more => ask for the money
-	public void changeTicket(Scanner in) { 
+	private void cancelTicket(Scanner in) {
+		final double REFUND_RATE = 0.7; // 70% refund
+		boolean completed = false;
+		do {
+			System.out.println("Are you sure you want to continue? Y/N");
+			String input = in.nextLine();
+			
+			switch (input) {
+				case "N":
+					System.out.println("The procedure has been aborted by the user!");
+					return;
+				case "Y":
+					completed = true;
+					break;
+				default:
+					System.out.println("Invalid input! Try again!");
+						
+			}
+		} while(!completed);
 		
-	}
-	
-	// give 90% of the ticket price back
-	public void cancelTicket(Scanner in) {
-		
+		do {
+			try {
+				System.out.println("Enter ticket number: ");
+				int number = Integer.parseInt(in.nextLine());
+				
+				Ticket ticket = Ticket.ticketWithNumber(number);
+				int price = ticket.getPrice();
+				System.out.println((int)(price * REFUND_RATE) + " BGN refund is returnted!");
+				ticket.cancelTicket();
+				return;
+			} catch (NumberFormatException ex) {
+				System.out.println("The ticket number must be a *number*! Try again!");
+			} catch (IllegalArgumentException ex) {
+				System.out.println(ex.getMessage());
+			}
+		} while(true);
 	}
 }

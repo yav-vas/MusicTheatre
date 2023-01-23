@@ -4,28 +4,24 @@ public class PaperTicket extends Ticket {
 
 	private String issuingCashierName;
 	
-	public PaperTicket(Performance performance, int price, Seat seat, String issuingCashierName) {
-		super(performance, price, seat);
+	public PaperTicket(Performance performance, int row, int seatOnRow, String issuingCashierName) {
+		super(performance, row, seatOnRow);
 		
 		setIssuingCashierName(issuingCashierName);
 	}
 	
-	public void setIssuingCashierName(String issuingCashierName) {
+	private void setIssuingCashierName(String issuingCashierName) {
 		this.issuingCashierName = issuingCashierName;
 	}
 	
 	@Override
-	public String printTicket() {
-		StringBuilder ticket = new StringBuilder();
+	public String toString() {
+		StringBuilder result = new StringBuilder();
 		
-		ticket.append("This is ticket with number: " + getTicketNumber() + "\n");
-		ticket.append("Performance: " + getPerformance().getTitle() + "\n");
-		ticket.append("Price: " + getPrice() + "\n");
-		ticket.append(getSeat().toString());
-		ticket.append("Issued by: " + issuingCashierName + "\n");
-		// TODO: Add more info about the ticket
+		result.append(super.toString());
+		result.append("Issued by: " + issuingCashierName + "\n");
 		
-		return ticket.toString();
+		return result.toString();
 	}
 	
 }

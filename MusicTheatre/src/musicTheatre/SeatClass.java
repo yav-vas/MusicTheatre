@@ -3,11 +3,8 @@ package musicTheatre;
 public enum SeatClass {
 	CHEAP, MIDDLE, EXPENSIVE;
 	
-	public int toNumber() { // TODO: rename all the usages of toString to toNumber()
-		// TODO: use ordinal
-		if (this == CHEAP) return 1;
-		if (this == MIDDLE) return 2;
-		else return 3; // this == EXPENSIVE
+	public int toNumber() {
+		return this.ordinal() + 1;
 	}
 	
 	public static String showOptions() {

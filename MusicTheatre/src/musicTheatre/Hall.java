@@ -19,8 +19,8 @@ public class Hall implements Unique {
 	
 	public Hall(String name, int rows, int seatsPerRow) {
 		setName(name);
-		this.rows = rows;
-		this.seatsPerRow = seatsPerRow;
+		setRows(rows);
+		setSeatsPerRow(seatsPerRow);
 		isUnique(this);
 		halls.add(this);
 	}
@@ -69,9 +69,9 @@ public class Hall implements Unique {
 		String name = hallToCheck.getName();
 		for (Hall hall : halls)
 			if (hall.getName().equals(name))
-				return true;
+				throw new IllegalArgumentException("There is already a hall with this name");
 				
-		return false;
+		return true;
 	}
 	
 	public static String printHalls() {
